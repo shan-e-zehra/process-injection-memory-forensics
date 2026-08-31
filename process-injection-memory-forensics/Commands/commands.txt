@@ -1,0 +1,102 @@
+# PROCESS INJECTION & MEMORY FORENSICS
+# Command History
+
+==================================================
+PHASE 1 — PROCESS INJECTION
+==================================================
+
+1. Launch Notepad and identify its PID using Task Manager.
+
+2. Open Cheat Engine and attach it to notepad.exe.
+
+3. Open Memory Viewer.
+
+4. Allocate memory and create the controlled test injection using Cheat Engine Auto Assemble.
+
+5. The injected test bytes used were:
+
+90 90 90 90 C3
+
+6. The allocated executable/writable memory region was observed at:
+
+0x2D635680000
+
+7. A trampoline/jump region was also created at:
+
+0x2D635670000
+
+
+==================================================
+PHASE 2 — MEMORY ACQUISITION
+==================================================
+
+1. Keep the test environment running and acquire the Windows memory image using the selected memory acquisition tool.
+
+2. Transfer the memory dump to Kali Linux.
+
+3. Memory dump location in Kali:
+
+~/Desktop/memdump.elf
+
+
+==================================================
+PHASE 3 — MEMORY FORENSICS WITH VOLATILITY 3
+==================================================
+
+1. Navigate to the Volatility 3 directory:
+
+cd ~/volatility3
+
+
+2. Verify the memory image and identify the Windows profile/system information:
+
+python3 vol.py -f ~/Desktop/memdump.elf windows.info
+
+
+3. List running processes:
+
+python3 vol.py -f ~/Desktop/memdump.elf windows.pslist
+
+
+4. Search specifically for Notepad:
+
+python3 vol.py -f ~/Desktop/memdump.elf windows.pslist | grep -i notepad
+
+
+5. Scan for processes using PsScan and save the output:
+
+python3 vol.py -f ~/Desktop/memdump.elf windows.psscan > psscan.txt
+
+
+6. Search the PsScan results for Notepad:
+
+grep -i notepad psscan.txt
+
+
+7. Run Malfind against the Notepad process:
+
+python3 vol.py -f ~/Desktop/memdump.elf windows.malfind --pid 6284
+
+
+==================================================
+KEY FORENSIC FINDING
+==================================================
+
+Notepad PID:
+6284
+
+Injected memory region:
+0x2D635680000
+
+Protection:
+PAGE_EXECUTE_READWRITE
+
+Test bytes:
+90 90 90 90 C3
+
+Trampoline region:
+0x2D635670000
+
+The Volatility malfind output identified the RWX
+memory regions and displayed the controlled test
+instruction bytes.
